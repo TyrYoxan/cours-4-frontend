@@ -1,0 +1,38 @@
+name: CI Workflow
+
+on: [push, pull_request]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Lint et formatage
+        run:
+          npm run lint --fix
+          npm run format
+          git diff --quiet || (git config --global user.email "github-actions@github.com" && git config --global user.name "GitHub Actions" && git commit -am "Auto-fix lint et formatage" && git push)
+
+      - name: Exécution des tests
+        run: npm run test
+
+      - name: Build du projet
+        run: npm run build
+
+      - name: Sauvegarde du dossier dist en artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Déploiement sur GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
